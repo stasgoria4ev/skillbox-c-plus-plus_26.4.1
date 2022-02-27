@@ -5,16 +5,40 @@
 
 class Track
 {
-public:
-    std::string title;
+    const char* title;
     std::tm dateCreat;
     int recordDurat;
+public:
+    //-------------seters--------------------
+    void setTitle(const char* sTitle) {
+        title = sTitle;
+    }
+    void setDateCreat(std::tm sDateCreat) {
+        dateCreat = sDateCreat;
+    }
+    void setRecordDurat(int sRecordDurat) {
+        recordDurat = sRecordDurat;
+    }
+    //-------------geters--------------------
+    std::string getTitle() {
+        return title;
+    }
+    std::string getDateCreat() {
+        char temp[80];
+        strftime (temp, 80, "%Y/%m/%d", &dateCreat);
+        return temp;
+    }
+    int getRecordDurat() {
+        return recordDurat;
+    }
 };
 
 class Player 
 {
-public: 
-    Track tracks[3];
+    std::vector<Track> tracks;
+    bool statusPlay = false;
+    bool statusPaused = false;
+    int numberCurrentAudioRecording;   
     
     void CorrectInputRecName(std::string& recName) { 
         bool found;
@@ -22,71 +46,68 @@ public:
             std::cout << ":";
             std::cin >> recName;
             found = false;
-            for (int i = 0; i < 3 && !found; i++) 
-                if (recName == tracks[i].title) found = true;
+            for (int i = 0; i < tracks.size() && !found; i++) 
+                if (recName == tracks[i].getTitle()) found = true;
             if (!found)
                 std::cout << "Invalid audio recording name, please try again.\n";
         } while (!found);
     }
     
-    void Display (int& i, std::vector<Track>& statusPlay) {
+    void Display (int& i) {
         std::stringstream text;
-        char temp[80];
-        strftime (temp, 80, "%Y/%m/%d", &tracks[i].dateCreat);
-        text << "Name = " << tracks[i].title << ", Date of creation = " << temp << ", Recording duration = " << tracks[i].recordDurat << " seconds.";
+        text << "Name = " << tracks[i].getTitle() << ", Date of creation = " << tracks[i].getDateCreat() << ", Recording duration = " << tracks[i].getRecordDurat() << " seconds.";
         std::cout << text.str() << '\n';
-
-        statusPlay.push_back(tracks[i]);
     }
 
-    void Play(std::vector<Track>& statusPlay) {
-        if (!statusPlay.empty()) 
-            return;
+    int Play() {
+        if (statusPlay) return 0;
+        else statusPlay = true;
+        
         std::cout << "List of audio titles:\n";
-        for (int i = 0; i < 3; i++)
-            std::cout << tracks[i].title << '\n';
+        for (int i = 0; i < tracks.size(); i++)
+            std::cout << tracks[i].getTitle() << '\n';
         std::cout << "Select an audio recording to play:\n";
         std::string recName;
         CorrectInputRecName(recName);
         bool found = false;
-        for (int i = 0; i < 3 && !found; i++) 
-            if (recName == tracks[i].title) {
+        int i;
+        for (i = 0; i < tracks.size() && !found; i++) 
+            if (recName == tracks[i].getTitle()) {
                 found = true;
-                Display(i, statusPlay);
-            }
+                Display(i); 
+            } 
+        i--; 
+        return i;
     }
 
-    void Pause(std::vector<Track>& statusPaused, std::vector<Track>& statusPlay) {
-        if (statusPlay.empty() || !statusPaused.empty())
-            return;
-        statusPaused.push_back(statusPlay[0]);
+    void Pause() {
+        if (!statusPlay || statusPaused) return;
+        else statusPaused = true;
         std::cout << "Pause recording.\n";
     }
-    
-    void Stop(std::vector<Track>& statusAudioPaused, std::vector<Track>& statusPlay) {
-        if (statusPlay.empty()) 
-            return;
-        statusPlay.clear();
-        statusAudioPaused.clear();
+
+    void Stop() {
+        if (!statusPlay) return;
+        else {
+            statusPlay = false;
+            statusPaused = false;
+        }
         std::cout << "Stop current playback.\n";
     }
     
-    void Next(std::vector<Track>& statusAudioPaused, std::vector<Track>& statusPlay) {
-        if (statusPlay.empty()) 
-            return;
+    void Next() { 
+        if (!statusPlay) return;
         std::srand(std::time(nullptr));
         int i;
         do {
-            i = std::rand() % 3;
-        } while (tracks[i].title == statusPlay[0].title &&
-                tracks[i].dateCreat.tm_year == statusPlay[0].dateCreat.tm_year && 
-                tracks[i].dateCreat.tm_mon == statusPlay[0].dateCreat.tm_mon && 
-                tracks[i].dateCreat.tm_mday == statusPlay[0].dateCreat.tm_mday &&
-                tracks[i].recordDurat == statusPlay[0].recordDurat);
-        Stop(statusAudioPaused, statusPlay);
-        Display(i, statusPlay);
+            i = std::rand() % 3; 
+        } while (i == numberCurrentAudioRecording);
+        Stop();
+        numberCurrentAudioRecording = i;                                                                                                                                        
+        statusPlay = true;
+        Display(numberCurrentAudioRecording);
     }
-    
+
     void CorrectInputCommand(std::string& command) { 
         do {
             std::cout << ":";
@@ -96,13 +117,13 @@ public:
         } while (command != "play" && command != "pause" && command != "next" && command != "stop" && command != "exit");
     }
 
-    std::string setStr(std::string& str) {
+    std::string CorrectInputDate(std::string text) {
         std::time_t t = std::time(nullptr);
         std::tm local = *std::localtime(&t);
         std::string strYear = "", strMon = "", strDay = "";
-        for (int i = 0; i < 4; i++) strYear += str[i]; 
-        for (int i = 5; i < 7; i++) strMon += str[i]; 
-        for (int i = 8; i < str.length(); i++) strDay += str[i]; 
+        for (int i = 0; i < 4; i++) strYear += text[i]; 
+        for (int i = 5; i < 7; i++) strMon += text[i]; 
+        for (int i = 8; i < text.length(); i++) strDay += text[i]; 
         if (std::stoi(strYear) > local.tm_year + 1900) strYear = std::to_string(local.tm_year + 1900);//корректировка года
         if (std::stoi(strMon) > 12) strMon = "12";//корректировка месяца
         int tempMon = std::stoi(strMon);
@@ -117,62 +138,80 @@ public:
         if (std::stoi(strYear) == local.tm_year + 1900 && std::stoi(strMon) == local.tm_mon + 1 && std::stoi(strDay) > local.tm_mday) 
             strDay = std::to_string(local.tm_mday);
 
-        str = strYear + '/' + strMon + '/' + strDay;
-        return str;
+        text = strYear + '/' + strMon + '/' + strDay;
+        return text;
+    }
+public:
+    void setTracks(Track sTracks) {
+        tracks.push_back(sTracks);
     }
 
-}; Player* audioPlayer = new Player();
+    void setPlay() {
+        Play();
+    }
+
+    void setPause() {
+        Pause();
+    }
+
+    void setStop() {
+        Stop();
+    }
+
+    void setNext() {
+        Next();
+    }
+    
+    void setCorrectInputCommand(std::string& command) {
+        CorrectInputCommand(command);
+    }
+    
+    std::string setCorrectInputDate(std::string text) {
+        return CorrectInputDate(text);
+    }
+}; 
 
 int main () {
-    std::time_t* t = new std::time_t(std::time(nullptr));
-    std::tm* local = new std::tm(*std::localtime(t));
+    Player* audioPlayer = new Player();
+    std::time_t t = std::time(nullptr);
+    std::tm local = *std::localtime(&t);
     std::stringstream ss; 
-    std::string* str = new std::string("2023:13|35");
-    ss << audioPlayer->setStr(*str);
-    delete str; str = nullptr;
-    ss >> std::get_time(local, "%Y/%m/%d"); 
-    Track* Rec1 = new Track {"audioRec1", *local, 34};
-    audioPlayer->tracks[0] = *Rec1; 
+    
+    ss << audioPlayer->setCorrectInputDate("2023:13|35");
+    ss >> std::get_time(&local, "%Y/%m/%d"); 
+    Track* Rec1 = new Track; Rec1->setTitle("audioRec1"); Rec1->setDateCreat(local); Rec1->setRecordDurat(34);
+    audioPlayer->setTracks(*Rec1);
     delete Rec1; Rec1 = nullptr; 
     ss.str(""); ss.clear();
 
-    str = new std::string("2021/03/03");
-    ss << audioPlayer->setStr(*str);
-    delete str; str = nullptr;
-    ss >> std::get_time(local, "%Y/%m/%d");   
-    Track* Rec2 = new Track {"audioRec2", *local, 17};
-    audioPlayer->tracks[1] = *Rec2; 
+    ss << audioPlayer->setCorrectInputDate("2021/03/03");
+    ss >> std::get_time(&local, "%Y/%m/%d");   
+    Track* Rec2 = new Track; Rec2->setTitle("audioRec2"); Rec2->setDateCreat(local); Rec2->setRecordDurat(17);
+    audioPlayer->setTracks(*Rec2);
     delete Rec2; Rec2 = nullptr; 
     ss.str(""); ss.clear(); 
 
-    str = new std::string("2020/02/02");
-    ss << audioPlayer->setStr(*str);
-    delete str; str = nullptr;
-    ss >> std::get_time(local, "%Y/%m/%d"); 
-    Track* Rec3 = new Track {"audioRec3", *local, 58};
-    audioPlayer->tracks[2] = *Rec3; 
+    ss << audioPlayer->setCorrectInputDate("2020/02/02");
+    ss >> std::get_time(&local, "%Y/%m/%d"); 
+    Track* Rec3 = new Track; Rec3->setTitle("audioRec3"); Rec3->setDateCreat(local); Rec3->setRecordDurat(58);
+    audioPlayer->setTracks(*Rec3);
     delete Rec3; Rec3 = nullptr;
     ss.str(""); ss.clear();
 
-    delete local, t;
-    local = nullptr; t = nullptr;
-
     std::string* command = new std::string;
-    std::vector<Track>* statusPlay = new std::vector<Track>;
-    std::vector<Track>* statusPaused = new std::vector<Track>;
 
     while (*command != "exit") {
         std::cout << "Choose command(play/pause/next/stop/exit).\n";
-        audioPlayer->CorrectInputCommand(*command);
+        audioPlayer->setCorrectInputCommand(*command);
         if (*command == "play") 
-            audioPlayer->Play(*statusPlay);
+            audioPlayer->setPlay();
         else if (*command == "pause")
-            audioPlayer->Pause(*statusPaused, *statusPlay);
+            audioPlayer->setPause();
         else if (*command == "next") 
-            audioPlayer->Next(*statusPaused, *statusPlay);
+            audioPlayer->setNext();
         else if (*command == "stop")
-            audioPlayer->Stop(*statusPaused, *statusPlay);
+            audioPlayer->setStop();
     }
-    delete statusPaused, statusPlay, audioPlayer, command;
-    statusPaused = nullptr; statusPlay = nullptr; audioPlayer = nullptr; command = nullptr;
+    delete audioPlayer; audioPlayer = nullptr;
+    delete command; command = nullptr;
 }
