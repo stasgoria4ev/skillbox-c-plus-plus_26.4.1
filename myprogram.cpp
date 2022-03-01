@@ -2,15 +2,16 @@
 #include <ctime>
 #include <iomanip>
 #include <vector>
+#include <sstream>
 
 class Track
 {
-    const char* title;
+    std::string title;
     std::tm dateCreat;
     int recordDurat;
 public:
     //-------------seters--------------------
-    void setTitle(const char* sTitle) {
+    void setTitle(std::string sTitle) {
         title = sTitle;
     }
     void setDateCreat(std::tm sDateCreat) {
@@ -58,7 +59,7 @@ class Player
         text << "Name = " << tracks[i].getTitle() << ", Date of creation = " << tracks[i].getDateCreat() << ", Recording duration = " << tracks[i].getRecordDurat() << " seconds.";
         std::cout << text.str() << '\n';
     }
-
+public:
     int Play() {
         if (statusPlay) return 0;
         else statusPlay = true;
@@ -141,33 +142,9 @@ class Player
         text = strYear + '/' + strMon + '/' + strDay;
         return text;
     }
-public:
+
     void setTracks(Track sTracks) {
         tracks.push_back(sTracks);
-    }
-
-    void setPlay() {
-        Play();
-    }
-
-    void setPause() {
-        Pause();
-    }
-
-    void setStop() {
-        Stop();
-    }
-
-    void setNext() {
-        Next();
-    }
-    
-    void setCorrectInputCommand(std::string& command) {
-        CorrectInputCommand(command);
-    }
-    
-    std::string setCorrectInputDate(std::string text) {
-        return CorrectInputDate(text);
     }
 }; 
 
@@ -177,21 +154,21 @@ int main () {
     std::tm local = *std::localtime(&t);
     std::stringstream ss; 
     
-    ss << audioPlayer->setCorrectInputDate("2023:13|35");
+    ss << audioPlayer->CorrectInputDate("2023:13|35");
     ss >> std::get_time(&local, "%Y/%m/%d"); 
     Track* Rec1 = new Track; Rec1->setTitle("audioRec1"); Rec1->setDateCreat(local); Rec1->setRecordDurat(34);
     audioPlayer->setTracks(*Rec1);
     delete Rec1; Rec1 = nullptr; 
     ss.str(""); ss.clear();
 
-    ss << audioPlayer->setCorrectInputDate("2021/03/03");
+    ss << audioPlayer->CorrectInputDate("2021/03/03");
     ss >> std::get_time(&local, "%Y/%m/%d");   
     Track* Rec2 = new Track; Rec2->setTitle("audioRec2"); Rec2->setDateCreat(local); Rec2->setRecordDurat(17);
     audioPlayer->setTracks(*Rec2);
     delete Rec2; Rec2 = nullptr; 
     ss.str(""); ss.clear(); 
 
-    ss << audioPlayer->setCorrectInputDate("2020/02/02");
+    ss << audioPlayer->CorrectInputDate("2020/02/02");
     ss >> std::get_time(&local, "%Y/%m/%d"); 
     Track* Rec3 = new Track; Rec3->setTitle("audioRec3"); Rec3->setDateCreat(local); Rec3->setRecordDurat(58);
     audioPlayer->setTracks(*Rec3);
@@ -202,15 +179,15 @@ int main () {
 
     while (*command != "exit") {
         std::cout << "Choose command(play/pause/next/stop/exit).\n";
-        audioPlayer->setCorrectInputCommand(*command);
+        audioPlayer->CorrectInputCommand(*command);
         if (*command == "play") 
-            audioPlayer->setPlay();
+            audioPlayer->Play();
         else if (*command == "pause")
-            audioPlayer->setPause();
+            audioPlayer->Pause();
         else if (*command == "next") 
-            audioPlayer->setNext();
+            audioPlayer->Next();
         else if (*command == "stop")
-            audioPlayer->setStop();
+            audioPlayer->Stop();
     }
     delete audioPlayer; audioPlayer = nullptr;
     delete command; command = nullptr;
